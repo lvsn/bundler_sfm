@@ -610,7 +610,7 @@ def bundler(image_list=None, options_file=None, shell=False, *args, **kwargs):
     if type(image_list) == dict:
         os.remove(image_list_file)
 
-def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False):
+def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False, skip_matching=False):
     """Prepare images and run bundler with default options."""
     # Create list of images
     if len(images) == 0:
@@ -629,7 +629,8 @@ def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False):
     # Match images
     if verbose: print("[- Matching keypoints (this can take a while) -]")
     matches_file = "matches.init.txt"
-    match_images(key_files, matches_file, verbose=verbose)
+    if not skip_matching:
+        match_images(key_files, matches_file, verbose=verbose)
 
     # Run Bundler
     if verbose: print("[- Running Bundler -]")
@@ -658,6 +659,8 @@ if __name__ == '__main__':
         help="disable parallelisation", default=False)
     parser.add_argument('--force-rebuild', action='store_true',
         help="force the rebuild of descriptors", default=False)
+    parser.add_argument('--skip-matching', action='store_true',
+        help="skip the matching phase", default=False)
     parser.add_argument('--extract-focal', action='store_true',
         help="only create list of images to be reconstructed", default=False)
     args = parser.parse_args()
@@ -673,5 +676,6 @@ if __name__ == '__main__':
             verbose=args.verbose,
             parallel=not args.no_parallel,
             force_rebuild=args.force_rebuild,
+            skip_matching=args.skip_matching,
         )
 
