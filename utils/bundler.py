@@ -29,6 +29,7 @@ import sys
 import glob
 import subprocess
 import tempfile
+import collections
 from multiprocessing import Pool
 from functools import partial
 
@@ -340,9 +341,9 @@ def get_images():
         error_str = ("Error: No images supplied!  "
                      "No JPEG files found in directory!")
         raise Exception(error_str)
-    return images
+    return sorted(images)
 
-def extract_focal_length(images=[], scale=1.0, verbose=False):
+def extract_focal_length(images=[], scale=1.0, verbose=False, flmul=1.0):
     """Extracts (pixel) focal length from images where available.
     The functions returns a dictionary of image, focal length pairs.
     If no focal length is extracted for an image, the second pair is None.
@@ -351,11 +352,11 @@ def extract_focal_length(images=[], scale=1.0, verbose=False):
         if verbose: print("[- Creating list of images -]")
         images = get_images()
 
-    ret = {}
+    ret = collections.OrderedDict()
     for image in images:
         if verbose: print("[Extracting EXIF tags from image {0}]".format(image))
 
-        tags = {}
+        tags = collections.OrderedDict()
         with open(image, 'rb') as fp:
             img = Image.open(fp)
             if hasattr(img, '_getexif'):
@@ -369,14 +370,13 @@ def extract_focal_length(images=[], scale=1.0, verbose=False):
         # Extract Focal Length
         focalN, focalD = tags.get('FocalLength', (0, 1))
         focal_length = float(focalN)/float(focalD)
+        focal_length *= flmul
 
         # Extract Resolution
         img_width = tags.get('ExifImageWidth', 0)
         img_height = tags.get('ExifImageHeight', 0)
         if img_width < img_height:
             img_width,img_height = img_height,img_width
-
-
 
         # Extract CCD Width (Prefer Lookup Table)
         ccd_width = 1.0
@@ -571,7 +571,8 @@ def bundler(image_list=None, options_file=None, shell=False, *args, **kwargs):
                 fp.write(bytes(o, 'utf-8'))
 
     image_list_file = ""
-    if type(image_list) == dict:
+    # Check if it is a dict-like object
+    if isinstance(image_list, collections.Mapping):
         with tempfile.NamedTemporaryFile(delete=False) as fp:
             for image,value in list(image_list.items()):
                 if value == None:
@@ -610,7 +611,8 @@ def bundler(image_list=None, options_file=None, shell=False, *args, **kwargs):
     if type(image_list) == dict:
         os.remove(image_list_file)
 
-def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False, skip_matching=False):
+def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False,
+                skip_matching=False, flmul=1.0):
     """Prepare images and run bundler with default options."""
     # Create list of images
     if len(images) == 0:
@@ -620,17 +622,26 @@ def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False, sk
     # Extract focal length
     if type(images) == list:
         if verbose: print("[- Extracting EXIF tags from images -]")
-        images = extract_focal_length(images, verbose=verbose)
+        images = extract_focal_length(images, verbose=verbose, flmul=flmul)
 
     # Extract SIFT features from images
     if verbose: print("[- Extracting keypoints -]")
-    key_files = sift_images(images, parallel=parallel, verbose=verbose)
+    key_files = sift_images(
+        images,
+        parallel=parallel,
+        verbose=verbose,
+        force_rebuild=force_rebuild,
+    )
 
     # Match images
     if verbose: print("[- Matching keypoints (this can take a while) -]")
     matches_file = "matches.init.txt"
     if not skip_matching:
         match_images(key_files, matches_file, verbose=verbose)
+
+    import time
+    with open('images-dbg-{}.txt'.format(time.time()), 'w') as fhdl:
+        fhdl.write("\n".join(images))
 
     # Run Bundler
     if verbose: print("[- Running Bundler -]")
@@ -663,6 +674,8 @@ if __name__ == '__main__':
         help="skip the matching phase", default=False)
     parser.add_argument('--extract-focal', action='store_true',
         help="only create list of images to be reconstructed", default=False)
+    parser.add_argument('--focal-length-multiplier', type=float,
+        help="focal length multiplier (applied on exif data)", default=1.0)
     args = parser.parse_args()
 
     if args.extract_focal:
@@ -677,5 +690,6 @@ if __name__ == '__main__':
             parallel=not args.no_parallel,
             force_rebuild=args.force_rebuild,
             skip_matching=args.skip_matching,
+            flmul=args.focal_length_multiplier,
         )
 
