@@ -493,7 +493,7 @@ def sift_images(images, verbose=False, parallel=True, force_rebuild=False):
 
     return key_filenames
 
-def match_images(key_files, matches_file, verbose=False):
+def match_images(key_files, matches_file, verbose=False, force_rebuild=False):
     "Executes KeyMatchFull to match key points in images."""
     global BIN_MATCHKEYS, BIN_PATH
 
@@ -502,6 +502,10 @@ def match_images(key_files, matches_file, verbose=False):
             BIN_MATCHKEYS = os.path.join(BIN_PATH, "KeyMatchFull.exe")
         else:
             BIN_MATCHKEYS = os.path.join(BIN_PATH, "KeyMatchFull")
+
+    if not force_rebuild and os.path.isfile(matches_file):
+        if verbose: print("Previous matches file found.")
+        return
 
     keys_file = ""
     with tempfile.NamedTemporaryFile(delete=False) as fp:
@@ -612,7 +616,7 @@ def bundler(image_list=None, options_file=None, shell=False, *args, **kwargs):
         os.remove(image_list_file)
 
 def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False,
-                skip_matching=False, flmul=1.0):
+                flmul=1.0):
     """Prepare images and run bundler with default options."""
     # Create list of images
     if len(images) == 0:
@@ -636,8 +640,8 @@ def run_bundler(images=[], verbose=False, parallel=True, force_rebuild=False,
     # Match images
     if verbose: print("[- Matching keypoints (this can take a while) -]")
     matches_file = "matches.init.txt"
-    if not skip_matching:
-        match_images(key_files, matches_file, verbose=verbose)
+    match_images(key_files, matches_file, verbose=verbose,
+                 force_rebuild=force_rebuild)
 
     import time
     with open('images-dbg-{}.txt'.format(time.time()), 'w') as fhdl:
@@ -670,8 +674,6 @@ if __name__ == '__main__':
         help="disable parallelisation", default=False)
     parser.add_argument('--force-rebuild', action='store_true',
         help="force the rebuild of descriptors", default=False)
-    parser.add_argument('--skip-matching', action='store_true',
-        help="skip the matching phase", default=False)
     parser.add_argument('--extract-focal', action='store_true',
         help="only create list of images to be reconstructed", default=False)
     parser.add_argument('--focal-length-multiplier', type=float,
@@ -689,7 +691,6 @@ if __name__ == '__main__':
             verbose=args.verbose,
             parallel=not args.no_parallel,
             force_rebuild=args.force_rebuild,
-            skip_matching=args.skip_matching,
             flmul=args.focal_length_multiplier,
         )
 
