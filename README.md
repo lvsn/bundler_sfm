@@ -8,6 +8,16 @@ based on the Photo Tourism work of Noah Snavely, Steven M. Seitz,
 For more information, see the Bundler homepage at 
     http://www.cs.cornell.edu/~snavely/bundler/
 
+--> Modification to use with ulavalSFM (desactivate with #define NORMALMODE) -- LERobot
+
+Files :
+
+* BundlerGeometry.cpp
+* BundlerApp.h
+* BundlerIO.cpp
+
+The script _bundler.py_ has also been modified
+
 What is Bundler?
 ----------------
 
