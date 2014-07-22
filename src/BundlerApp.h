@@ -24,6 +24,8 @@
 #include "LinkDirection.h"
 #include "TwoFrameModel.h"
 
+//#define NORMALMODE
+
 typedef std::pair<int,int> ImagePair;
 
 class BundlerApp : public BaseApp
@@ -192,6 +194,11 @@ public:
 
     /* Compute a set of tracks that explain the matches */
     void ComputeTracks(int new_image_start = 0);
+
+#ifndef NORMALMODE
+    /* Fill m_transform from the ulavalSFM file */
+    void fillTransform();
+#endif
 
     /* Compute geometric information about image pairs */
     void ComputeGeometricConstraints(bool overwrite = false, 

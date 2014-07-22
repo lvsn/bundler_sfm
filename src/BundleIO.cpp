@@ -34,7 +34,7 @@
 #include "qsort.h"
 #include "util.h"
 
-
+//#define NORMALMODE
 
 #define MIN_MATCHES 10
 
@@ -284,7 +284,11 @@ void BaseApp::LoadMatches() {
         }
     }
 
+#ifdef NORMALMODE
+
     PruneDoubleMatches();
+
+#endif
 
     m_matches_loaded = true;
 }

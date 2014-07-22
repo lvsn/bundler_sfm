@@ -36,7 +36,7 @@
 #include "qsort.h"
 #include "util.h"
 
-
+//#define NORMALMODE
 
 double global_scale = 1.0;
 
@@ -97,6 +97,40 @@ void TransformInfo::WriteToFile(FILE *f) {
     fprintf(f, "%d\n", m_num_inliers);
 }
 
+#ifndef NORMALMODE
+
+void BundlerApp::fillMTransform()
+{
+    FILE *f = fopen("ulavalSFM.txt", "rb");
+
+    int num;
+
+    fscanf(f, "%d\n", &num);
+
+    for (int i = 0; i < num; i++)
+    {
+        int idx1, idx2, inliers;
+        double ratio;
+        double M[9];
+
+        fscanf(f, "%d %d\n", &idx1, &idx2);
+
+        MatchIndex offset = GetMatchIndex(idx1, idx2);
+
+        fscanf(f, "%d\n", &inliers);
+        fscanf(f, "%lf\n", &ratio);
+        fscanf(f, "%lf %lf %lf %lf %lf %lf %lf %lf %lf\n", &M[0], &M[1], &M[2], &M[3], &M[4], &M[5], &M[6], &M[7], &M[8]);
+
+        m_transforms[offset].m_num_inliers = inliers;
+        m_transforms[offset].m_inlier_ratio = ratio;
+        memcpy(m_transforms[offset].m_H, M, 9 * sizeof(double));
+    }
+
+    fclose(f);
+}
+
+#endif
+
 void BundlerApp::ComputeGeometricConstraints(bool overwrite, 
                                              int new_image_start) 
 {
@@ -110,12 +144,14 @@ void BundlerApp::ComputeGeometricConstraints(bool overwrite,
     } else {
         LoadMatches();
 
-        if (num_images < 40000) 
-            WriteMatchTable(".prune");
-
         if (!m_skip_fmatrix || !m_skip_homographies || 
             m_keypoint_border_width > 0 || m_keypoint_border_bottom > 0)
             LoadKeys(false);
+
+#ifdef NORMALMODE    
+
+        if (num_images < 40000) 
+            WriteMatchTable(".prune");    
 
         if (m_keypoint_border_width > 0) {
             for (int i = 0; i < num_images; i++) {
@@ -146,6 +182,12 @@ void BundlerApp::ComputeGeometricConstraints(bool overwrite,
         if (!m_skip_homographies) {
             ComputeTransforms(false, new_image_start);
         }
+
+#else
+
+        fillMTransform();
+
+#endif
 
 	MakeMatchListsSymmetric();
 
