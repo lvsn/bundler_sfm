@@ -185,7 +185,7 @@ void BundlerApp::ComputeGeometricConstraints(bool overwrite,
 
 #else
 
-        fillMTransform();
+        fillTransform();
 
 #endif
 
