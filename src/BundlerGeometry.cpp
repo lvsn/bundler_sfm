@@ -99,7 +99,7 @@ void TransformInfo::WriteToFile(FILE *f) {
 
 #ifndef NORMALMODE
 
-void BundlerApp::fillMTransform()
+void BundlerApp::fillTransform()
 {
     FILE *f = fopen("ulavalSFM.txt", "rb");
 
