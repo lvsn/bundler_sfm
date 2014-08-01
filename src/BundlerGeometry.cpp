@@ -184,16 +184,16 @@ void BundlerApp::ComputeGeometricConstraints(bool overwrite,
         }
 
 #else
-
+	
+	MakeMatchListsSymmetric();
         fillTransform();
 
 #endif
-
-	MakeMatchListsSymmetric();
+#ifdef NORMALMODE
 
         if (num_images < 40000)
             WriteMatchTable(".ransac");
-
+#endif
         // RemoveAllMatches();
 	ComputeTracks(new_image_start);
 
