@@ -18,6 +18,8 @@ Files :
 
 The script _bundler.py_ has also been modified
 
+--> Utilisateurs de colosse : BundlerSFM à utiliser, Makefile modifié
+
 What is Bundler?
 ----------------
 
