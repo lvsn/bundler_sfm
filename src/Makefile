@@ -40,8 +40,9 @@ BUNDLER_OBJS=BaseApp.o BundlerApp.o keys.o Register.o Epipolar.o	\
 	BundleIO.o ProcessBundle.o BundleTwo.o Decompose.o		\
 	RelativePose.o Distortion.o TwoFrameModel.o LoadJPEG.o
 
-BUNDLER_BASE_LIBS=-limage -lsfmdrv -lsba.v1.5 -lmatrix -lz -llapack -lblas \
-	-lcblas -lminpack -lm -l5point -ljpeg -lANN_char -lgfortran
+LAPACK=-Wl,--no-as-needed -lmkl_gf_lp64 -lmkl_core -lmkl_sequential -lpthread -lm
+BUNDLER_BASE_LIBS=-limage -lsfmdrv -lsba.v1.5 -lmatrix -lz $(LAPACK) \
+	-lminpack -lm -l5point -ljpeg -lANN_char -lgfortran
 CERES_LIBS=-lceres -lcholmod -lccolamd -lcolamd -lamd -lcamd -lcxsparse \
 	-lsuitesparseconfig -lgomp -lglog -lpthread
 
@@ -79,12 +80,12 @@ $(KEYMATCHFULL): KeyMatchFull.o keys2a.o
 
 $(BUNDLE2PLY): Bundle2Ply.o
 	$(CXX) -o $@ $(CPPFLAGS) $(LIB_PATH) Bundle2Ply.o \
-		-lmatrix -llapack -lblas -lcblas -lgfortran -lminpack
+		-lmatrix $(LAPACK) -lgfortran -lminpack
 	cp $@ ../bin
 
 $(BUNDLE2PMVS): Bundle2PMVS.o LoadJPEG.o
 	$(CXX) -o $@ $(CPPFLAGS) $(LIB_PATH) Bundle2PMVS.o LoadJPEG.o \
-		-limage -lmatrix -llapack -lblas -lcblas -lgfortran \
+		-limage -lmatrix $(LAPACK) -lgfortran \
 		-lminpack -ljpeg
 	cp $@ ../bin
 
@@ -94,7 +95,7 @@ $(BUNDLE2VIS): Bundle2Vis.o
 
 $(RADIALUNDISTORT): RadialUndistort.o LoadJPEG.o
 	$(CXX) -o $@ $(CPPFLAGS) $(LIB_PATH) $^ \
-		-limage -lmatrix -llapack -lblas -lcblas -lgfortran \
+		-limage -lmatrix $(LAPACK) -lgfortran \
 		-lminpack -ljpeg
 	cp $@ ../bin
 
