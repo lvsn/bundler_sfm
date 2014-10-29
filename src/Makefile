@@ -2,8 +2,8 @@
 
 #USE_CERES=true
 
-CC=gcc
-CXX=g++
+CC=icc
+CXX=icc
 OPTFLAGS=-O3 -Wall -Wno-unused-result
 # OPTFLAGS=-g2
 OTHERFLAGS=-std=gnu++0x
